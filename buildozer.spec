@@ -2,26 +2,18 @@
 title = SHAHADAT RACING
 package.name = shahadatracing
 package.domain = com.shahadat
-
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,ttf
-source.include_patterns = main.py
-
+source.include_exts = py,png,jpg,kv,atlas,ttf,json
 version = 1.0
-
-requirements = python3,pygame-ce
-
+requirements = python3==3.11.9,hostpython3==3.11.9,pygame-ce
 orientation = portrait
 fullscreen = 0
-
-android.permissions = INTERNET
+android.hide_statusbar = 1
+android.archs = arm64-v8a, armeabi-v7a
 android.api = 33
 android.minapi = 24
 android.ndk = 25b
-android.archs = arm64-v8a, armeabi-v7a
-android.allow_backup = True
-
-# Pygame এর জন্য এটা দরকার
+android.permissions = INTERNET
 p4a.bootstrap = sdl2
 
 [buildozer]

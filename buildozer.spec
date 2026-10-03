@@ -5,7 +5,7 @@ package.domain = com.shahadat
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,ttf,json
 version = 1.0
-requirements = python3==3.11.9,hostpython3==3.11.9,pygame-ce,Cython==0.29.36
+requirements = python3,pygame-ce
 orientation = portrait
 fullscreen = 0
 android.hide_statusbar = 1

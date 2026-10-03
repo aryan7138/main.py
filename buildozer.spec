@@ -15,7 +15,7 @@ android.minapi = 24
 android.ndk = 25b
 android.permissions = INTERNET
 p4a.bootstrap = sdl2
-p4a.branch = v2024.03.12
+p4a.branch = v2024.01.21
 
 [buildozer]
 log_level = 2

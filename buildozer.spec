@@ -15,6 +15,8 @@ android.minapi = 24
 android.ndk = 25b
 android.permissions = INTERNET
 p4a.bootstrap = sdl2
+android.extra_cflags = -Wno-error
+android.extra_ldflags = 
 
 [buildozer]
 log_level = 2

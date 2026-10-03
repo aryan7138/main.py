@@ -5,9 +5,8 @@ import sys
 pygame.init()
 
 # ==================================================
-# SCREEN (FIXED INITIALIZATION BUG)
+# SCREEN (DYNAMIC FULLSCREEN FOR MOBILE)
 # ==================================================
-# সরাসরি (0,0) এবং FULLSCREEN দিলে পাইগেম নিজেই ডিভাইসের নেটিভ রেজোলিউশন নেয়
 try:
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     WIDTH, HEIGHT = screen.get_size()
@@ -37,13 +36,13 @@ GRAY = (90, 90, 95)
 DARK_GRAY = (35, 35, 40)
 
 # ==================================================
-# FONTS
+# FONTS (FIXED: "None" to None for Android compatibility)
 # ==================================================
-title_font = pygame.font.SysFont("None", 58, True)
-big_font = pygame.font.SysFont("None", 52, True)
-font = pygame.font.SysFont("None", 28, True)
-small_font = pygame.font.SysFont("None", 22, True)
-button_font = pygame.font.SysFont("None", 48, True)
+title_font = pygame.font.SysFont(None, 58, True)
+big_font = pygame.font.SysFont(None, 52, True)
+font = pygame.font.SysFont(None, 28, True)
+small_font = pygame.font.SysFont(None, 22, True)
+button_font = pygame.font.SysFont(None, 48, True)
 
 # ==================================================
 # ROAD
@@ -63,7 +62,7 @@ CAR_HEIGHT = 85
 
 player = pygame.Rect(
     ROAD_LEFT + LANE_WIDTH * 2 + (LANE_WIDTH - CAR_WIDTH) // 2,
-    HEIGHT - 300,
+    HEIGHT - 400,
     CAR_WIDTH,
     CAR_HEIGHT
 )
@@ -93,7 +92,7 @@ left_pressed = False
 right_pressed = False
 
 # ==================================================
-# BUTTONS
+# BUTTONS (DYNAMIC POSITIONS FOR MOBILE)
 # ==================================================
 BTN_WIDTH = int((WIDTH - 60) / 2)
 BTN_HEIGHT = 110
@@ -131,7 +130,6 @@ def spawn_enemy():
     available_lanes = []
     for lane in range(LANES):
         x = ROAD_LEFT + lane * LANE_WIDTH + (LANE_WIDTH - CAR_WIDTH) // 2
-        # চেক করুন এই লেনের উপরের দিকে কোনো কার আছে কি না
         lane_clear = True
         for enemy in enemies:
             if abs(enemy["rect"].x - x) < 10 and enemy["rect"].y < 150:
@@ -141,7 +139,7 @@ def spawn_enemy():
             available_lanes.append(lane)
 
     if not available_lanes:
-        return # সব লেন ব্লক থাকলে স্পন করবেন না
+        return
 
     lane = random.choice(available_lanes)
     x = ROAD_LEFT + lane * LANE_WIDTH + (LANE_WIDTH - CAR_WIDTH) // 2
@@ -283,10 +281,112 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+        # অ্যান্ড্রয়েড ব্যাক বাটন হ্যান্ডেল করা
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
             if not game_started:
                 if start_button.collidepoint(x, y):
+                    game_started = True
+                    reset_game()
+            elif game_over:
+                if restart_button.collidepoint(x, y):
+                    reset_game()
+            else:
+                if pause_button.collidepoint(x, y):
+                    paused = not paused
+                if not paused:
+                    if left_button.collidepoint(x, y):
+                        left_pressed = True
+                    if right_button.collidepoint(x, y):
+                        right_pressed = True
+
+        if event.type == pygame.MOUSEBUTTONUP:
+            left_pressed = False
+            right_pressed = False
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN and not game_started:
+                game_started = True
+                reset_game()
+            if event.key == pygame.K_r and game_over:
+                reset_game()
+            if event.key == pygame.K_p and game_started and not game_over:
+                paused = not paused
+
+    if game_started and not game_over and not paused:
+        if left_pressed:
+            player.x -= PLAYER_SPEED
+        if right_pressed:
+            player.x += PLAYER_SPEED
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            player.x -= PLAYER_SPEED
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            player.x += PLAYER_SPEED
+
+        if player.left < ROAD_LEFT + 10:
+            player.left = ROAD_LEFT + 10
+        if player.right > ROAD_RIGHT - 10:
+            player.right = ROAD_RIGHT - 10
+
+        road_line_offset += game_speed
+        spawn_timer += 1
+
+        spawn_delay = max(25, int(65 - game_speed * 3))
+        if spawn_timer >= spawn_delay:
+            spawn_timer = 0
+            spawn_enemy()
+
+        for enemy in enemies[:]:
+            enemy["rect"].y += round(game_speed)
+
+            if enemy["rect"].top > HEIGHT:
+                enemies.remove(enemy)
+                score += 1
+                if score % 10 == 0:
+                    game_speed += 0.7
+
+            if player.colliderect(enemy["rect"].inflate(-8, -8)):
+                game_over = True
+                if score > best_score:
+                    best_score = score
+
+    # ==================================================
+    # DRAW
+    # ==================================================
+    if not game_started:
+        draw_start_menu()
+    else:
+        draw_road()
+        for enemy in enemies:
+            draw_car(enemy["rect"], enemy["color"])
+        draw_car(player, BLUE)
+
+        title_small = font.render("SHAHADAT RACING", True, CYAN)
+        screen.blit(title_small, (20, 50))
+        score_text = small_font.render(f"Score: {score}", True, WHITE)
+        screen.blit(score_text, (20, 90))
+        speed_text = small_font.render(f"Speed: {game_speed:.1f}", True, WHITE)
+        screen.blit(speed_text, (20, 120))
+
+        if not game_over:
+            draw_pause_button()
+        if not game_over and not paused:
+            draw_buttons()
+        if paused and not game_over:
+            draw_pause_screen()
+        if game_over:
+            draw_game_over()
+
+    pygame.display.update()
+
+pygame.quit()
+sys.exit():
                     game_started = True
                     reset_game()
             elif game_over:

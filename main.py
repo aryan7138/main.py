@@ -36,7 +36,7 @@ GRAY = (90, 90, 95)
 DARK_GRAY = (35, 35, 40)
 
 # ==================================================
-# FONTS (FIXED: "None" to None for Android compatibility)
+# FONTS
 # ==================================================
 title_font = pygame.font.SysFont(None, 58, True)
 big_font = pygame.font.SysFont(None, 52, True)
@@ -92,7 +92,7 @@ left_pressed = False
 right_pressed = False
 
 # ==================================================
-# BUTTONS (DYNAMIC POSITIONS FOR MOBILE)
+# BUTTONS
 # ==================================================
 BTN_WIDTH = int((WIDTH - 60) / 2)
 BTN_HEIGHT = 110
@@ -124,7 +124,7 @@ def draw_car(rect, color):
         pygame.draw.rect(screen, BLACK, (wx, wy, 7, 22), border_radius=3)
 
 # ==================================================
-# SPAWN ENEMY (FIXED OVERLAP BUG)
+# SPAWN ENEMY
 # ==================================================
 def spawn_enemy():
     available_lanes = []
@@ -172,7 +172,7 @@ def draw_road():
             y += distance
 
 # ==================================================
-# UI DRAWING FUNCTIONS
+# UI DRAWING
 # ==================================================
 def draw_title():
     shadow = title_font.render("SHAHADAT RACING", True, BLACK)
@@ -208,7 +208,7 @@ def draw_start_menu():
     start_text = font.render("START GAME", True, WHITE)
     screen.blit(start_text, start_text.get_rect(center=start_button.center))
 
-    best_text = font.render(f"BEST SCORE: {best_score}", True, YELLOW)
+    best_text = font.render("BEST SCORE: " + str(best_score), True, YELLOW)
     screen.blit(best_text, best_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 150)))
 
     info = small_font.render("Use buttons or Arrow Keys", True, WHITE)
@@ -222,10 +222,10 @@ def draw_game_over():
     title = big_font.render("GAME OVER", True, RED)
     screen.blit(title, title.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 100)))
 
-    score_text = font.render(f"Score: {score}", True, WHITE)
+    score_text = font.render("Score: " + str(score), True, WHITE)
     screen.blit(score_text, score_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 30)))
 
-    best_text = font.render(f"Best Score: {best_score}", True, YELLOW)
+    best_text = font.render("Best Score: " + str(best_score), True, YELLOW)
     screen.blit(best_text, best_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 15)))
 
     pygame.draw.rect(screen, BLUE, restart_button, border_radius=20)
@@ -281,7 +281,6 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        # অ্যান্ড্রয়েড ব্যাক বাটন হ্যান্ডেল করা
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
@@ -289,6 +288,101 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
             if not game_started:
+                if start_button.collidepoint(x, y):
+                    game_started = True
+                    reset_game()
+            elif game_over:
+                if restart_button.collidepoint(x, y):
+                    reset_game()
+            else:
+                if pause_button.collidepoint(x, y):
+                    paused = not paused
+                if not paused:
+                    if left_button.collidepoint(x, y):
+                        left_pressed = True
+                    if right_button.collidepoint(x, y):
+                        right_pressed = True
+
+        if event.type == pygame.MOUSEBUTTONUP:
+            left_pressed = False
+            right_pressed = False
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN and not game_started:
+                game_started = True
+                reset_game()
+            if event.key == pygame.K_r and game_over:
+                reset_game()
+            if event.key == pygame.K_p and game_started and not game_over:
+                paused = not paused
+
+    if game_started and not game_over and not paused:
+        if left_pressed:
+            player.x -= PLAYER_SPEED
+        if right_pressed:
+            player.x += PLAYER_SPEED
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            player.x -= PLAYER_SPEED
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            player.x += PLAYER_SPEED
+
+        if player.left < ROAD_LEFT + 10:
+            player.left = ROAD_LEFT + 10
+        if player.right > ROAD_RIGHT - 10:
+            player.right = ROAD_RIGHT - 10
+
+        road_line_offset += game_speed
+        spawn_timer += 1
+
+        spawn_delay = max(25, int(65 - game_speed * 3))
+        if spawn_timer >= spawn_delay:
+            spawn_timer = 0
+            spawn_enemy()
+
+        for enemy in enemies[:]:
+            enemy["rect"].y += round(game_speed)
+
+            if enemy["rect"].top > HEIGHT:
+                enemies.remove(enemy)
+                score += 1
+                if score % 10 == 0:
+                    game_speed += 0.7
+
+            if player.colliderect(enemy["rect"].inflate(-8, -8)):
+                game_over = True
+                if score > best_score:
+                    best_score = score
+
+    if not game_started:
+        draw_start_menu()
+    else:
+        draw_road()
+        for enemy in enemies:
+            draw_car(enemy["rect"], enemy["color"])
+        draw_car(player, BLUE)
+
+        title_small = font.render("SHAHADAT RACING", True, CYAN)
+        screen.blit(title_small, (20, 50))
+        score_text = small_font.render("Score: " + str(score), True, WHITE)
+        screen.blit(score_text, (20, 90))
+        speed_text = small_font.render("Speed: " + str(round(game_speed, 1)), True, WHITE)
+        screen.blit(speed_text, (20, 120))
+
+        if not game_over:
+            draw_pause_button()
+        if not game_over and not paused:
+            draw_buttons()
+        if paused and not game_over:
+            draw_pause_screen()
+        if game_over:
+            draw_game_over()
+
+    pygame.display.update()
+
+pygame.quit()
+sys.exit()    if not game_started:
                 if start_button.collidepoint(x, y):
                     game_started = True
                     reset_game()

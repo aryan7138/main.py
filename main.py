@@ -39,11 +39,11 @@ DARK_GRAY = (35, 35, 40)
 # ==================================================
 # FONTS
 # ==================================================
-title_font = pygame.font.SysFont("Arial", 58, True)
-big_font = pygame.font.SysFont("Arial", 52, True)
-font = pygame.font.SysFont("Arial", 28, True)
-small_font = pygame.font.SysFont("Arial", 22, True)
-button_font = pygame.font.SysFont("Arial", 48, True)
+title_font = pygame.font.SysFont("None", 58, True)
+big_font = pygame.font.SysFont("None", 52, True)
+font = pygame.font.SysFont("None", 28, True)
+small_font = pygame.font.SysFont("None", 22, True)
+button_font = pygame.font.SysFont("None", 48, True)
 
 # ==================================================
 # ROAD
